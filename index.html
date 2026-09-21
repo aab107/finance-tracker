@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Финансовый Трекер Бюджета</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta id="theme-color-meta" name="theme-color" content="#f3f4f6">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Честный Бюджет","short_name":"Бюджет","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#3b82f6","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}'>
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --income: #10b981;
+            --btn-apply-bg: #3b82f6;
+            --btn-apply-text: #ffffff;
+            --btn-save-bg: #10b981;
+            --btn-save-text: #ffffff;
+            --summary-bg: #eff6ff;
+            --summary-border: #bfdbfe;
+            --input-bg: #ffffff;
+            --input-border: #d1d5db;
+            --applied-bg: #f8fafc;
+            --applied-border: #cbd5e1;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary: #60a5fa;
+            --success: #34d399;
+            --danger: #f87171;
+            --warning: #fbbf24;
+            --income: #34d399;
+            --btn-apply-bg: #2563eb;
+            --btn-apply-text: #ffffff;
+            --btn-save-bg: #059669;
+            --btn-save-text: #ffffff;
+            --summary-bg: rgba(30, 58, 138, 0.3);
+            --summary-border: #1e40af;
+            --input-bg: #334155;
+            --input-border: #475569;
+            --applied-bg: #0f172a;
+            --applied-border: #334155;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            transition: background-color 0.2s, color 0.2s; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        body { margin: 0; padding: 10px; background-color: var(--bg-color); color: var(--text-main); }
+        .container { max-width: 600px; margin: 0 auto; padding-bottom: 20px;}
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .header-title { font-size: 1.1rem; font-weight: bold; margin: 0; }
+        .header-actions { display: flex; gap: 6px; }
+
+        .icon-btn, .theme-toggle-btn {
+            background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main);
+            padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            background: var(--card-bg); border-radius: 16px; padding: 12px; margin-bottom: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--border-color);
+        }
+        h2 { font-size: 1rem; margin-top: 0; margin-bottom: 10px; text-align: center; color: var(--text-main);}
+        
+        .section-title {
+            font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 12px 0 8px 0; padding-bottom: 4px; border-bottom: 2px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-title.inc { color: var(--income); }
+        .section-title.mand { color: var(--danger); }
+        .section-title.desire { color: var(--primary); }
+        .section-title.undesire { color: var(--warning); }
+        
+        .sankey-container { width: 100%; height: 340px; }
+        
+        .summary-box { text-align: center; margin-bottom: 10px; padding: 10px; background: var(--summary-bg); border-radius: 12px; border: 1px solid var(--summary-border);}
+        .summary-box .title { font-size: 0.8rem; color: var(--text-muted); }
+        .summary-box .amount { font-size: 1.6rem; font-weight: bold; color: var(--primary); margin: 2px 0;}
+        .summary-details { display: flex; justify-content: space-around; font-size: 0.75rem; font-weight: 600; margin-top: 4px; }
+        .summary-details .inc-val { color: var(--income); }
+        .summary-details .exp-val { color: var(--danger); }
+        
+        .chart-container { position: relative; height: 170px; width: 100%; display: flex; justify-content: center; margin-bottom: 8px;}
+        .progress-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -35%);
+            text-align: center;
+        }
+        .progress-text span { display: block; font-size: 1.2rem; font-weight: bold; color: var(--text-main); }
+        .progress-text small { font-size: 0.75rem; color: var(--text-muted); }
+
+        .sliders-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .slider-group {
+            background: rgba(150, 150, 150, 0.05);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .slider-header { font-size: 0.75rem; font-weight: 600; color: var(--text-main); line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .slider-controls { display: flex; align-items: center; gap: 4px; }
+        
+        input[type=range] {
+            flex: 1;
+            appearance: none;
+            background: transparent;
+            min-width: 0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--primary); cursor: pointer; margin-top: -5px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .slider-inc::-webkit-slider-thumb { background: var(--income) !important; }
+        .slider-undesire::-webkit-slider-thumb { background: var(--warning) !important; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; }
+        
+        .num-input {
+            width: 62px;
+            padding: 2px 4px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-align: right;
+        }
+        .num-input.exp-num { color: var(--danger); }
+        .num-input.inc-num { color: var(--income); }
+        .num-input:focus { outline: none; border-color: var(--primary); }
+        .currency-label { font-size: 0.7rem; color: var(--text-muted); font-weight: bold; }
+        
+        .btn {
+            width: 100%; padding: 11px; border: none;
+            border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-apply { background: var(--btn-apply-bg); color: var(--btn-apply-text); }
+        .btn-save { background: var(--btn-save-bg); color: var(--btn-save-text); }
+        .btn-reset { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); font-size: 0.75rem; padding: 6px; margin-top: 6px; }
+        .btn:active { opacity: 0.85; }
+
+        .input-savings {
+            width: 100%; padding: 6px; border: 1px solid var(--input-border); background: var(--input-bg);
+            border-radius: 8px; text-align: center; font-size: 1rem; font-weight: bold; color: var(--primary); margin-top: 4px;
+        }
+
+        .applied-summary {
+            margin-top: 10px; padding: 10px; background: var(--applied-bg); border: 1px dashed var(--applied-border); border-radius: 10px;
+        }
+        .applied-summary h3 { font-size: 0.85rem; margin: 0 0 6px 0; color: var(--text-main); display: flex; justify-content: space-between; align-items: center;}
+        .applied-badge { font-size: 0.7rem; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 10px; }
+        .applied-item { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 2px 0; border-bottom: 1px solid var(--border-color); }
+        .applied-item:last-child { border-bottom: none; font-weight: bold; padding-top: 4px; }
+        .lock-notice { font-size: 0.7rem; color: var(--success); font-weight: normal; }
+
+        /* Модальное окно блокнота */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.5); z-index: 1000;
+            display: flex; justify-content: center; align-items: center; padding: 15px;
+            backdrop-filter: blur(2px);
+        }
+        .modal-box {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 14px; width: 100%; max-width: 450px; padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 0.9rem; color: var(--text-main); }
+        .modal-close { cursor: pointer; font-size: 1.2rem; line-height: 1; color: var(--text-muted); padding: 2px 6px; }
+        
+        #notepadTextarea {
+            width: 100%; height: 200px; padding: 8px; border-radius: 8px;
+            border: 1px solid var(--input-border); background: var(--input-bg);
+            color: var(--text-main); font-size: 0.85rem; resize: none; outline: none;
+            line-height: 1.4;
+        }
+        .notepad-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: var(--text-muted); }
+        .save-status { color: var(--success); font-weight: bold; opacity: 0; transition: opacity 0.3s; }
+        .save-status.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-bar">
+        <h1 class="header-title">Финансовый Учет</h1>
+        <div class="header-actions">
+            <button class="icon-btn" id="notepadToggleBtn">📝 Блокнот</button>
+            <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Темная</button>
+        </div>
+    </div>
+
+    <!-- 1. Диаграмма Сэнки -->
+    <div class="card">
+        <h2>Потоки денежных средств</h2>
+        <div class="summary-box">
+            <div class="title">Остаток средств</div>
+            <div class="amount" id="totalSavingsDisplay">0 ₸</div>
+            <div class="summary-details">
+                <div>Доход: <span class="inc-val" id="summaryTotalIncome">0 ₸</span></div>
+                <div>Расход: <span class="exp-val" id="summaryTotalExpenses">0 ₸</span></div>
+            </div>
+        </div>
+        <div id="sankey_chart" class="sankey-container"></div>
+    </div>
+
+    <!-- 2. Калькулятор ввода -->
+    <div class="card" id="sliders-container">
+        <h2>Ввод операций и распределение</h2>
+        
+        <div class="section-title inc">Поступления (Доход)</div>
+        <div id="income-sliders-list" class="sliders-grid"></div>
+
+        <div class="section-title mand">🟢 Обязательные расходы</div>
+        <div id="mandatory-sliders-list" class="sliders-grid"></div>
+
+        <div class="section-title desire">🔵 Желаемые расходы</div>
+        <div id="desirable-sliders-list" class="sliders-grid"></div>
+
+        <div class="section-title undesire">⚠️ Нежелательные расходы / Утечки</div>
+        <div id="undesirable-sliders-list" class="sliders-grid"></div>
+
+        <button class="btn btn-apply" id="applyExpensesBtn">Применить</button>
+        <button class="btn btn-reset" id="resetBtn">Сбросить</button>
+
+        <div class="applied-summary" id="appliedSummaryBox" style="display: none;">
+            <h3>
+                <span>Зафиксированный срез месяца</span>
+                <span class="applied-badge">Зафиксировано</span>
+            </h3>
+            <div id="appliedItemsList"></div>
+        </div>
+    </div>
+
+    <!-- 3. Накопления и Подушка Безопасности -->
+    <div class="card">
+        <h2> Подушка Безопасности (Защищена)</h2>
+        
+        <div style="margin-bottom: 10px; text-align: center;">
+            <label class="title" style="font-size: 0.8rem; color: var(--text-muted);"> Сумма вложений (₸):</label>
+            <input type="number" id="savedBaseInput" class="input-savings" value="0" readonly title="Защищено от случайного сброса">
+            <div class="lock-notice"> Шкала прогресса ✅</div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="goalChart"></canvas>
+            <div class="progress-text">
+                <span id="percentDisplay">0%</span>
+                <small id="savedTotalText">0 / 700 000 ₸</small>
+            </div>
+        </div>
+
+        <button class="btn btn-save" id="addSavingsBtn"> Внести депозит </button>
+    </div>
+</div>
+
+<!-- Модальное окно Блокнота -->
+<div class="modal-overlay" id="notepadOverlay" style="display: none;">
+    <div class="modal-box" id="notepadBox">
+        <div class="modal-header">
+            <span>📝 Личный Блокнот</span>
+            <span class="modal-close" id="notepadCloseBtn">&times;</span>
+        </div>
+        <textarea id="notepadTextarea" maxlength="2000" placeholder="Запишите заметки, напоминания или финансовые цели..."></textarea>
+        <div class="notepad-footer">
+            <span id="notepadCharCount">0 / 2000</span>
+            <span class="save-status" id="saveStatusText">✓ Сохранено</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const goalAmount = 700000;
+
+    // 1. Поступления
+    const defaultIncomes = [
+        { id: 'avans', name: 'Аванс (20-е)', max: 188000, val: 0, color: "#4ade80" },
+        { id: 'salary', name: 'Зарплата (5-е)', max: 180000, val: 0, color: "#22c55e" }
+    ];
+
+    // 2. Обязательные расходы
+    const defaultMandatory = [
+        { id: 'rent', name: 'Аренда комнаты', max: 70000, val: 0, color: "#ef4444" },
+        { id: 'childrenRoad', name: 'Дорога детям', max: 26000, val: 0, color: "#ec4899" },
+        { id: 'credit', name: 'Кредит / Долг', max: 14668, val: 0, color: "#dc2626" },
+        { id: 'fatherHelp', name: 'Помощь отцу', max: 10000, val: 0, color: "#f97316" },
+        { id: 'transport', name: 'Такси / Транспорт', max: 10500, val: 0, color: "#a855f7" }
+    ];
+
+    // 3. Желаемые расходы
+    const defaultDesirable = [
+        { id: 'psychologist', name: 'Психолог', max: 40000, val: 0, color: "#06b6d4" },
+        { id: 'relaxation', name: 'Снятие напряжения', max: 30000, val: 0, color: "#3b82f6" },
+        { id: 'personal', name: 'Личные расходы', max: 10000, val: 0, color: "#6366f1" },
+        { id: 'giftsAndOneOff', name: 'Подарки / Разовые', max: 25000, val: 0, color: "#8b5cf6" }
+    ];
+
+    // 4. Нежелательные расходы (Утечки)
+    const defaultUndesirable = [
+        { id: 'badHabits', name: 'Вредные привычки', max: 35000 , val: 0, color: "#b91c1c" },
+        { id: 'officeFood', name: 'Еда в офисе', max: 9000, val: 0, color: "#f59e0b" },
+        { id: 'borrowers', name: 'Выдача в долг', max: 20000, val: 0, color: "#d97706" },
+        { id: 'forceMajeure', name: 'Форс-мажор', max: 20000, val: 0, color: "#78716c" }
+    ];
+
+    // Состояние зафиксированных сумм за месяц
+    let appliedExpensesMap = JSON.parse(localStorage.getItem('fin_applied_exp_map')) || {};
+    let appliedIncomesMap = JSON.parse(localStorage.getItem('fin_applied_inc_map')) || {};
+
+    // Защищенный реестр подушки безопасности (НЕ сбрасывается при сбросе среза месяца)
+    let savedBase = parseInt(localStorage.getItem('fin_protected_pillow')) || 0;
+    document.getElementById('savedBaseInput').value = savedBase;
+
+    // Временный ввод со слайсеров
+    let incomes = JSON.parse(JSON.stringify(defaultIncomes));
+    let mandatoryExp = JSON.parse(JSON.stringify(defaultMandatory));
+    let desirableExp = JSON.parse(JSON.stringify(defaultDesirable));
+    let undesirableExp = JSON.parse(JSON.stringify(defaultUndesirable));
+
+    // Переключение темы
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeMeta = document.getElementById('theme-color-meta');
+    let currentTheme = localStorage.getItem('fin_theme') || 'light';
+
+    function applyTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        currentTheme = theme;
+        localStorage.setItem('fin_theme', theme);
+        if (themeBtn) themeBtn.innerText = theme === 'dark' ? '☀️ Светлая' : '🌙 Темная';
+        if (themeMeta) themeMeta.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f3f4f6');
+    }
+
+    themeBtn.addEventListener('click', () => {
+        applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+        updateDashboard();
+    });
+
+    applyTheme(currentTheme);
+
+    // --- ЛОГИКА БЛОКНОТА ---
+    const notepadOverlay = document.getElementById('notepadOverlay');
+    const notepadToggleBtn = document.getElementById('notepadToggleBtn');
+    const notepadCloseBtn = document.getElementById('notepadCloseBtn');
+    const notepadTextarea = document.getElementById('notepadTextarea');
+    const notepadCharCount = document.getElementById('notepadCharCount');
+    const saveStatusText = document.getElementById('saveStatusText');
+
+    notepadTextarea.value = localStorage.getItem('fin_notepad_text') || '';
+    updateCharCount();
+
+    function updateCharCount() {
+        notepadCharCount.innerText = `${notepadTextarea.value.length} / 2000`;
+    }
+
+    function saveNotepad() {
+        localStorage.setItem('fin_notepad_text', notepadTextarea.value);
+        saveStatusText.classList.add('show');
+        setTimeout(() => saveStatusText.classList.remove('show'), 1200);
+    }
+
+    function openNotepad() {
+        notepadOverlay.style.display = 'flex';
+    }
+
+    function closeNotepad() {
+        saveNotepad();
+        notepadOverlay.style.display = 'none';
+    }
+
+    notepadToggleBtn.addEventListener('click', openNotepad);
+    notepadCloseBtn.addEventListener('click', closeNotepad);
+
+    // Клик мимо окна блокнота -> Сохранение и закрытие
+    notepadOverlay.addEventListener('click', function(e) {
+        if (e.target === notepadOverlay) {
+            closeNotepad();
+        }
+    });
+
+    notepadTextarea.addEventListener('input', function() {
+        updateCharCount();
+        saveNotepad();
+    });
+
+
+    // Функция отрисовки группы слайсеров
+    function renderSliderGroup(containerId, list, thumbClass = '') {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        list.forEach((item, index) => {
+            const group = document.createElement('div');
+            group.className = 'slider-group';
+            group.innerHTML = `
+                <div class="slider-header" title="${item.name}">${item.name}</div>
+                <div class="slider-controls">
+                    <input type="range" class="${thumbClass}" id="${item.id}_slider" min="0" max="${item.max}" step="500" value="${item.val}">
+                    <input type="number" id="${item.id}_num" min="0" max="${item.max}" step="500" value="${item.val}" class="num-input ${thumbClass.includes('inc') ? 'inc-num' : 'exp-num'}">
+                    <span class="currency-label">₸</span>
+                </div>
+            `;
+            container.appendChild(group);
+
+            const slider = document.getElementById(`${item.id}_slider`);
+            const numInput = document.getElementById(`${item.id}_num`);
+
+            slider.addEventListener('input', function(e) {
+                const val = parseInt(e.target.value) || 0;
+                list[index].val = val;
+                numInput.value = val;
+                updateDashboard();
+            });
+
+            numInput.addEventListener('input', function(e) {
+                let val = parseInt(e.target.value) || 0;
+                if (val > item.max) val = item.max;
+                if (val < 0) val = 0;
+                list[index].val = val;
+                slider.value = val;
+                updateDashboard();
+            });
+        });
+    }
+
+    renderSliderGroup('income-sliders-list', incomes, 'slider-inc');
+    renderSliderGroup('mandatory-sliders-list', mandatoryExp);
+    renderSliderGroup('desirable-sliders-list', desirableExp);
+    renderSliderGroup('undesirable-sliders-list', undesirableExp, 'slider-undesire');
+
+    // Круговая диаграмма Подушки Безопасности
+    const ctx = document.getElementById('goalChart').getContext('2d');
+    let goalChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Накоплено в Подушке', 'Осталось собрать'],
+            datasets: [{
+                data: [0, goalAmount],
+                backgroundColor: ['#10b981', '#e5e7eb'],
+                borderWidth: 0, cutout: '75%'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+    });
+
+    function getCombinedTotal(list, appliedMap) {
+        let total = 0;
+        list.forEach(item => {
+            const appliedVal = appliedMap[item.id] || 0;
+            total += appliedVal + (item.val || 0);
+        });
+        return total;
+    }
+
+    function updateDashboard() {
+        const allExpensesLists = [...mandatoryExp, ...desirableExp, ...undesirableExp];
+        
+        let totalIncome = getCombinedTotal(incomes, appliedIncomesMap);
+        let totalExpenses = getCombinedTotal(allExpensesLists, appliedExpensesMap);
+        
+        let currentMonthSavings = Math.max(0, totalIncome - totalExpenses);
+
+        document.getElementById('totalSavingsDisplay').innerText = currentMonthSavings.toLocaleString('ru-RU') + ' ₸';
+        document.getElementById('summaryTotalIncome').innerText = totalIncome.toLocaleString('ru-RU') + ' ₸';
+        document.getElementById('summaryTotalExpenses').innerText = totalExpenses.toLocaleString('ru-RU') + ' ₸';
+
+        let percent = ((savedBase / goalAmount) * 100).toFixed(1);
+        if (percent > 100) percent = 100;
+
+        document.getElementById('percentDisplay').innerText = percent + '%';
+        document.getElementById('savedTotalText').innerText = `${savedBase.toLocaleString('ru-RU')} / 700 000 ₸`;
+
+        const emptySectorColor = currentTheme === 'dark' ? '#334155' : '#e5e7eb';
+        goalChart.data.datasets[0].backgroundColor = [currentTheme === 'dark' ? '#34d399' : '#10b981', emptySectorColor];
+        goalChart.data.datasets[0].data = [savedBase, Math.max(0, goalAmount - savedBase)];
+        goalChart.update();
+
+        // Построение диаграммы Сэнки
+        const fontColor = currentTheme === 'dark' ? '#f8fafc' : '#1f2937';
+        const labels = ["Совокупный доход"];
+        const nodeColors = ["#3b82f6"];
+        let source = [], target = [], value = [];
+
+        incomes.forEach((inc) => {
+            const totalVal = (appliedIncomesMap[inc.id] || 0) + (inc.val || 0);
+            if (totalVal > 0) {
+                labels.push(inc.name);
+                nodeColors.push(inc.color);
+                source.push(labels.length - 1);
+                target.push(0);
+                value.push(totalVal);
+            }
+        });
+
+        labels.push("Все расходы");
+        nodeColors.push("#ef4444");
+        let expNodeIdx = labels.length - 1;
+        source.push(0); target.push(expNodeIdx); value.push(totalExpenses);
+
+        labels.push("Остаток месяца");
+        nodeColors.push("#10b981");
+        let remNodeIdx = labels.length - 1;
+        source.push(0); target.push(remNodeIdx); value.push(currentMonthSavings);
+
+        allExpensesLists.forEach((exp) => {
+            const totalVal = (appliedExpensesMap[exp.id] || 0) + (exp.val || 0);
+            if (totalVal > 0) {
+                labels.push(exp.name);
+                nodeColors.push(exp.color);
+                source.push(expNodeIdx);
+                target.push(labels.length - 1);
+                value.push(totalVal);
+            }
+        });
+
+        Plotly.react('sankey_chart', [{
+            type: "sankey", orientation: "h",
+            node: { pad: 10, thickness: 15, label: labels, color: nodeColors },
+            link: { source: source, target: target, value: value, color: currentTheme === 'dark' ? "rgba(255, 255, 255, 0.15)" : "rgba(150, 150, 150, 0.3)" }
+        }], { margin: { l: 0, r: 10, t: 10, b: 10 }, font: { size: 9, color: fontColor }, paper_bgcolor: "transparent" }, {displayModeBar: false});
+    }
+
+    function renderAppliedSummary() {
+        const summaryBox = document.getElementById('appliedSummaryBox');
+        const itemsList = document.getElementById('appliedItemsList');
+        const allExpensesLists = [...mandatoryExp, ...desirableExp, ...undesirableExp];
+
+        let totalInc = 0;
+        incomes.forEach(inc => totalInc += (appliedIncomesMap[inc.id] || 0));
+
+        let totalExp = 0;
+        let html = `
+            <div class="applied-item" style="color: var(--income); font-weight: bold;">
+                <span>Зафиксированный доход:</span>
+                <span>${totalInc.toLocaleString('ru-RU')} ₸</span>
+            </div>
+        `;
+
+        allExpensesLists.forEach(exp => {
+            const val = appliedExpensesMap[exp.id] || 0;
+            if (val > 0) {
+                totalExp += val;
+                html += `
+                    <div class="applied-item">
+                        <span>${exp.name}</span>
+                        <span>${val.toLocaleString('ru-RU')} ₸</span>
+                    </div>
+                `;
+            }
+        });
+
+        const rem = Math.max(0, totalInc - totalExp);
+        html += `
+            <div class="applied-item">
+                <span>Итого трат зафиксировано:</span>
+                <span style="color: var(--danger);">${totalExp.toLocaleString('ru-RU')} ₸</span>
+            </div>
+            <div class="applied-item" style="color: var(--success);">
+                <span>Остаток к зачислению в Подушку:</span>
+                <span>${rem.toLocaleString('ru-RU')} ₸</span>
+            </div>
+        `;
+
+        itemsList.innerHTML = html;
+        summaryBox.style.display = totalInc > 0 || totalExp > 0 ? 'block' : 'none';
+    }
+
+    // Кнопка «Применить срез»
+    document.getElementById('applyExpensesBtn').addEventListener('click', function() {
+        const allExpensesLists = [...mandatoryExp, ...desirableExp, ...undesirableExp];
+
+        incomes.forEach(inc => {
+            if (inc.val > 0) {
+                appliedIncomesMap[inc.id] = (appliedIncomesMap[inc.id] || 0) + inc.val;
+                inc.val = 0;
+            }
+        });
+
+        allExpensesLists.forEach(exp => {
+            if (exp.val > 0) {
+                appliedExpensesMap[exp.id] = (appliedExpensesMap[exp.id] || 0) + exp.val;
+                exp.val = 0;
+            }
+        });
+
+        localStorage.setItem('fin_applied_inc_map', JSON.stringify(appliedIncomesMap));
+        localStorage.setItem('fin_applied_exp_map', JSON.stringify(appliedExpensesMap));
+
+        renderSliderGroup('income-sliders-list', incomes, 'slider-inc');
+        renderSliderGroup('mandatory-sliders-list', mandatoryExp);
+        renderSliderGroup('desirable-sliders-list', desirableExp);
+        renderSliderGroup('undesirable-sliders-list', undesirableExp, 'slider-undesire');
+
+        renderAppliedSummary();
+        updateDashboard();
+        alert('Срез бюджета применен! Слайсеры сброшены в 0 для нового ввода.');
+    });
+
+    // Кнопка «Сбросить»
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        if (confirm('Сбросить текущий зафиксированный срез этого месяца для перерасчета? (Подушка безопасности НЕ будет сброшена)')) {
+            appliedExpensesMap = {};
+            appliedIncomesMap = {};
+            localStorage.removeItem('fin_applied_inc_map');
+            localStorage.removeItem('fin_applied_exp_map');
+            
+            incomes.forEach(i => i.val = 0);
+            mandatoryExp.forEach(e => e.val = 0);
+            desirableExp.forEach(e => e.val = 0);
+            undesirableExp.forEach(e => e.val = 0);
+
+            renderSliderGroup('income-sliders-list', incomes, 'slider-inc');
+            renderSliderGroup('mandatory-sliders-list', mandatoryExp);
+            renderSliderGroup('desirable-sliders-list', desirableExp);
+            renderSliderGroup('undesirable-sliders-list', undesirableExp, 'slider-undesire');
+
+            renderAppliedSummary();
+            updateDashboard();
+        }
+    });
+
+    // Перевод средств в Подушку Безопасности
+    document.getElementById('addSavingsBtn').addEventListener('click', function() {
+        const allExpensesLists = [...mandatoryExp, ...desirableExp, ...undesirableExp];
+        let totalIncome = getCombinedTotal(incomes, appliedIncomesMap);
+        let totalExpenses = getCombinedTotal(allExpensesLists, appliedExpensesMap);
+        let currentMonthSavings = Math.max(0, totalIncome - totalExpenses);
+        
+        if (currentMonthSavings <= 0) {
+            alert('У вас нет свободного остатка месяца для внесения в подушку!');
+            return;
+        }
+
+        savedBase += currentMonthSavings;
+        localStorage.setItem('fin_protected_pillow', savedBase);
+        document.getElementById('savedBaseInput').value = savedBase;
+
+        appliedExpensesMap = {};
+        appliedIncomesMap = {};
+        localStorage.removeItem('fin_applied_inc_map');
+        localStorage.removeItem('fin_applied_exp_map');
+
+        incomes.forEach(i => i.val = 0);
+        mandatoryExp.forEach(e => e.val = 0);
+        desirableExp.forEach(e => e.val = 0);
+        undesirableExp.forEach(e => e.val = 0);
+
+        renderSliderGroup('income-sliders-list', incomes, 'slider-inc');
+        renderSliderGroup('mandatory-sliders-list', mandatoryExp);
+        renderSliderGroup('desirable-sliders-list', desirableExp);
+        renderSliderGroup('undesirable-sliders-list', undesirableExp, 'slider-undesire');
+
+        renderAppliedSummary();
+        updateDashboard();
+        alert(`🔒 Успешно зачислено ${currentMonthSavings.toLocaleString('ru-RU')} ₸ в Неприкосновенную Подушку Безопасности!`);
+    });
+
+    renderAppliedSummary();
+    updateDashboard();
+</script>
+</body>
+</html>
