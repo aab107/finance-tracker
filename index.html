@@ -136,7 +136,7 @@
         
         .section-title {
             font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-            margin: 12px 0 8px 0; padding-bottom: 4px; border-bottom: 2px solid var(--border-color);
+            margin: 22px 0 12px 0; padding-bottom: 4px; border-bottom: 2px solid var(--border-color);
             display: flex; justify-content: space-between; align-items: center;
         }
         .section-title.inc { color: var(--income); }
@@ -169,7 +169,7 @@
         .sliders-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 14px;
             width: 100%;
         }
 
@@ -181,7 +181,7 @@
 
         .slider-group {
             background: rgba(150, 150, 150, 0.05);
-            padding: 8px;
+            padding: 12px;
             border-radius: 10px;
             border: 1px solid var(--border-color);
             display: flex;
@@ -223,7 +223,7 @@
         
         .btn {
             width: 100%; padding: 11px; border: none;
-            border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 10px;
+            border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 18px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .btn-apply { background: var(--btn-apply-bg); color: var(--btn-apply-text); }
@@ -250,7 +250,7 @@
 
 <div class="container">
     <div class="header-bar">
-        <h1 class="header-title">Финансовый Учет</h1>
+        <h1 class="header-title">Финансовый трэкер </h1>
         <div class="header-actions">
             <button class="notepad-btn" id="notepadToggleBtn">📝 Заметки</button>
             <button class="theme-toggle-btn" id="themeToggleBtn">🌙 Темная</button>
@@ -274,7 +274,7 @@
     <div class="card">
         <h2>Потоки денежных средств</h2>
         <div class="summary-box">
-            <div class="title">Остаток на конец периода</div>
+            <div class="title">Остаток средств на балансе</div>
             <div class="amount" id="totalSavingsDisplay">0 ₸</div>
             <div class="summary-details">
                 <div>Доход: <span class="inc-val" id="summaryTotalIncome">0 ₸</span></div>
