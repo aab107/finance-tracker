@@ -339,33 +339,33 @@
 
     // 1. Поступления
     const defaultIncomes = [
-        { id: 'avans', name: 'Аванс (20-е)', max: 300000, val: 0, color: "#4ade80" },
-        { id: 'salary', name: 'Зарплата (5-е)', max: 300000, val: 0, color: "#22c55e" }
+        { id: 'avans', name: 'Аванс (20-е)', max: 188000, val: 0, color: "#4ade80" },
+        { id: 'salary', name: 'Зарплата (5-е)', max: 188000, val: 0, color: "#22c55e" }
     ];
 
     // 2. Обязательные расходы
     const defaultMandatory = [
-        { id: 'rent', name: 'Аренда комнаты', max: 100000, val: 0, color: "#ef4444" },
-        { id: 'childrenRoad', name: 'Дорога детям', max: 50000, val: 0, color: "#ec4899" },
-        { id: 'credit', name: 'Кредит / Долг', max: 50000, val: 0, color: "#dc2626" },
-        { id: 'fatherHelp', name: 'Помощь отцу', max: 30000, val: 0, color: "#f97316" },
-        { id: 'transport', name: 'Такси / Транспорт', max: 40000, val: 0, color: "#a855f7" }
+        { id: 'rent', name: 'Аренда комнаты', max: 70000, val: 0, color: "#ef4444" },
+        { id: 'childrenRoad', name: 'Дорога детям', max: 26000, val: 0, color: "#ec4899" },
+        { id: 'credit', name: 'Кредит в банке', max: 30000, val: 0, color: "#dc2626" },
+        { id: 'fatherHelp', name: 'Помощь отцу', max: 10000, val: 0, color: "#f97316" },
+        { id: 'transport', name: 'Такси / Транспорт', max: 9500, val: 0, color: "#a855f7" }
     ];
 
     // 3. Желаемые расходы
     const defaultDesirable = [
-        { id: 'psychologist', name: 'Психолог', max: 50000, val: 0, color: "#06b6d4" },
-        { id: 'relaxation', name: 'Снятие напряжения', max: 40000, val: 0, color: "#3b82f6" },
-        { id: 'personal', name: 'Личные расходы', max: 30000, val: 0, color: "#6366f1" },
-        { id: 'giftsAndOneOff', name: 'Подарки / Разовые', max: 40000, val: 0, color: "#8b5cf6" }
+        { id: 'psychologist', name: 'Психолог', max: 40000, val: 0, color: "#06b6d4" },
+        { id: 'relaxation', name: 'Снятие напряжения', max: 30000, val: 0, color: "#3b82f6" },
+        { id: 'personal', name: 'Личные расходы', max: 15000, val: 0, color: "#6366f1" },
+        { id: 'giftsAndOneOff', name: 'Подарки / Разовые', max: 25000, val: 0, color: "#8b5cf6" }
     ];
 
     // 4. Нежелательные расходы (Утечки)
     const defaultUndesirable = [
-        { id: 'badHabits', name: 'Вредные привычки', max: 40000, val: 0, color: "#b91c1c" },
-        { id: 'officeFood', name: 'Еда в офисе', max: 30000, val: 0, color: "#f59e0b" },
-        { id: 'borrowers', name: 'Выдача в долг', max: 50000, val: 0, color: "#d97706" },
-        { id: 'forceMajeure', name: 'Форс-мажор', max: 30000, val: 0, color: "#78716c" }
+        { id: 'badHabits', name: 'Вредные привычки', max: 31500, val: 0, color: "#b91c1c" },
+        { id: 'officeFood', name: 'Еда в офисе', max: 9000, val: 0, color: "#f59e0b" },
+        { id: 'borrowers', name: 'Выдача в долг', max: 15000, val: 0, color: "#d97706" },
+        { id: 'forceMajeure', name: 'Форс-мажор', max: 20000, val: 0, color: "#78716c" }
     ];
 
     let appliedExpensesMap = JSON.parse(localStorage.getItem('fin_applied_exp_map')) || {};
